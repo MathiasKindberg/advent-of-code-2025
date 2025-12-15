@@ -1,0 +1,10 @@
+[workspace]
+members = ["days/*"]
+resolver = "3"
+
+
+# For inspiration see for example rust-analyzer (https://github.com/rust-analyzer/rust-analyzer) and Facebook Diem (https://github.com/diem/diem)
+
+[workspace.dependencies]
+itertools = "0.14.0"
+lending-iterator = "0.1"
