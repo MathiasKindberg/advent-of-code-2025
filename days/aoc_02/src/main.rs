@@ -39,15 +39,17 @@ fn get_part(number: u64, start_digit: u32, steps: u32) -> Option<u64> {
     let trimmed_right = number / 10_u64.pow(digits_to_remove_right);
 
     // Keep only n digits
-    let result = trimmed_right % 10_u64.pow(steps);
-
-    Some(result)
+    Some(trimmed_right % 10_u64.pow(steps))
 }
 
+// Brute force, but integer math and smart about exclusions.
 fn two(input: &Input) {
     let now = std::time::Instant::now();
     let mut sum = 0;
-    for (low, high) in input[0..2].iter() {
+
+    let mut deduplicate_repeating_parts = Vec::new();
+
+    for (low, high) in input.iter() {
         for id in (*low)..=(*high) {
             let digits = id.checked_ilog10().unwrap_or(0) + 1;
             // Cant repeat if less than 2 digits.
@@ -55,29 +57,38 @@ fn two(input: &Input) {
                 continue;
             }
 
-            // Can't have repitions if they are longer than half
-            let digits = digits / 2;
-            // Try repetitions
-
-            for repeating_digits in 1..=digits {
+            // Can't have repititions if they are longer than half
+            for repeating_digits in 1..=(digits / 2) {
                 // Can't have repititions if we can't cleanly divide.
                 if digits % repeating_digits != 0 {
-                    println!("{digits} % {repeating_digits}");
                     continue;
                 }
 
-                let base = 10_u64.pow(repeating_digits);
-                let repeating_part = id / base;
+                let repeating_part = get_part(id, 0, repeating_digits).unwrap();
 
-                // Extracts digits 4 and 5.
-                // (num / 1000) % 100
+                // Now step through the number checking if the repeating part matches
+                let mut start_digit = repeating_digits;
+                let mut matches = true;
+                while start_digit < digits {
+                    if repeating_part != get_part(id, start_digit, repeating_digits).unwrap() {
+                        matches = false;
+                        break;
+                    }
+                    start_digit += repeating_digits
+                }
 
-                println!(
-                    "Low: {low} High: {high} Id: {id} Digits: {repeating_digits} Repeating part: {repeating_part} Base: {base}"
-                );
+                // Need to de-duplicate numbers like: 222222 which matches on 1, 2 and 3 repeating digits.
+                if matches && !deduplicate_repeating_parts.contains(&id) {
+                    deduplicate_repeating_parts.push(id);
+                    sum += id;
+                }
             }
+
+            // Clear the deduplication Vec.
+            deduplicate_repeating_parts.clear();
         }
     }
+
     let elapsed = now.elapsed();
     println!("Two: {sum} | Elapsed: {elapsed:?}");
 }
@@ -152,6 +163,12 @@ mod tests {
                 start_digit: 0,
                 steps: 3,
                 correct: 123,
+            },
+            Test {
+                number: 123,
+                start_digit: 1,
+                steps: 1,
+                correct: 2,
             },
         ];
 
