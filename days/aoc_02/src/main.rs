@@ -1,32 +1,169 @@
-type Input = Vec<String>;
+type Input = Vec<(u64, u64)>;
 
-fn one(_input: &Input) {
+fn one(input: &Input) {
     let now = std::time::Instant::now();
-    let sum = 0;
+    let mut sum = 0;
+
+    for (low, high) in input {
+        for id in (*low)..=(*high) {
+            let digits = id.checked_ilog10().unwrap_or(0) + 1;
+            // Can only have even number of digits to split into two matching parts.
+            if !digits % 2 == 0 {
+                continue;
+            }
+            let base = 10_u64.pow(digits / 2);
+            let first_part = id / base;
+            let second_part = id % base;
+
+            if first_part == second_part {
+                sum += id
+            }
+        }
+    }
 
     let elapsed = now.elapsed();
     println!("One: {sum} | Elapsed: {elapsed:?}");
 }
 
-fn two(_input: &Input) {
-    let now = std::time::Instant::now();
-    let sum = 0;
+/// start_digit = starting position (0-indexed from the left/most significant digit)
+fn get_part(number: u64, start_digit: u32, steps: u32) -> Option<u64> {
+    let total_digits = number.checked_ilog10().unwrap_or(0) + 1;
 
+    // Check if extraction is valid
+    if start_digit + steps > total_digits {
+        return None;
+    }
+
+    // Remove digits to the right of our target slice
+    let digits_to_remove_right = total_digits - start_digit - steps;
+    let trimmed_right = number / 10_u64.pow(digits_to_remove_right);
+
+    // Keep only n digits
+    let result = trimmed_right % 10_u64.pow(steps);
+
+    Some(result)
+}
+
+fn two(input: &Input) {
+    let now = std::time::Instant::now();
+    let mut sum = 0;
+    for (low, high) in input[0..2].iter() {
+        for id in (*low)..=(*high) {
+            let digits = id.checked_ilog10().unwrap_or(0) + 1;
+            // Cant repeat if less than 2 digits.
+            if digits < 2 {
+                continue;
+            }
+
+            // Can't have repitions if they are longer than half
+            let digits = digits / 2;
+            // Try repetitions
+
+            for repeating_digits in 1..=digits {
+                // Can't have repititions if we can't cleanly divide.
+                if digits % repeating_digits != 0 {
+                    println!("{digits} % {repeating_digits}");
+                    continue;
+                }
+
+                let base = 10_u64.pow(repeating_digits);
+                let repeating_part = id / base;
+
+                // Extracts digits 4 and 5.
+                // (num / 1000) % 100
+
+                println!(
+                    "Low: {low} High: {high} Id: {id} Digits: {repeating_digits} Repeating part: {repeating_part} Base: {base}"
+                );
+            }
+        }
+    }
     let elapsed = now.elapsed();
     println!("Two: {sum} | Elapsed: {elapsed:?}");
 }
 
-fn parse(input: &[String]) -> Input {
-    input.iter().map(|row| row.to_owned()).collect()
+fn parse(input: String) -> Input {
+    input
+        .split(",")
+        .into_iter()
+        .map(|input| input.split_once("-").expect("Valid input"))
+        .map(|(low, high)| (low.parse().unwrap(), high.parse().unwrap()))
+        .collect()
 }
 
 fn main() {
-    use std::io::BufRead;
-
     let stdin = std::io::stdin();
-    let input: Vec<String> = stdin.lock().lines().map_while(Result::ok).collect();
-    let input = parse(&input);
+    let mut input: String = String::new();
+    stdin.read_line(&mut input).unwrap();
+
+    let input = parse(input);
+    // println!("{input:?}");
 
     one(&input);
     two(&input);
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::get_part;
+
+    #[test]
+    fn test_get_part() {
+        struct Test {
+            number: u64,
+            start_digit: u32,
+            steps: u32,
+            correct: u64,
+        }
+
+        let test_table = vec![
+            Test {
+                number: 123456789,
+                start_digit: 2,
+                steps: 1,
+                correct: 3,
+            },
+            Test {
+                number: 12,
+                start_digit: 0,
+                steps: 1,
+                correct: 1,
+            },
+            Test {
+                number: 12,
+                start_digit: 1,
+                steps: 1,
+                correct: 2,
+            },
+            Test {
+                number: 123,
+                start_digit: 0,
+                steps: 2,
+                correct: 12,
+            },
+            Test {
+                number: 123,
+                start_digit: 1,
+                steps: 2,
+                correct: 23,
+            },
+            Test {
+                number: 123,
+                start_digit: 0,
+                steps: 3,
+                correct: 123,
+            },
+        ];
+
+        for test in test_table {
+            assert_eq!(
+                get_part(test.number, test.start_digit, test.steps).unwrap(),
+                test.correct,
+                "For {} starting at digit {} and ending at {}",
+                test.number,
+                test.start_digit,
+                test.steps
+            )
+        }
+    }
 }
