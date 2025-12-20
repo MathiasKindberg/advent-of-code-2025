@@ -1,24 +1,3 @@
-// /// Adds a padding layer of dots around the schematic ensuring
-// /// we do not have to deal with the edges.
-// pub fn pad_input(mut input: Vec<Vec<char>>, character: char) -> Vec<Vec<char>> {
-//     assert!(!input.is_empty(), "Expected input");
-
-//     for row in input.iter_mut() {
-//         row.insert(0, character);
-//         row.push(character)
-//     }
-
-//     let top_bottom_padding: Vec<_> = character
-//         .to_string()
-//         .repeat(input[0].len())
-//         .chars()
-//         .collect();
-//     input.insert(0, top_bottom_padding.clone());
-//     input.push(top_bottom_padding);
-
-//     input
-// }
-
 /// Adds a padding layer of dots around the schematic ensuring
 /// we do not have to deal with the edges.
 pub fn pad_input<T: Clone>(mut input: Vec<Vec<T>>, character: T) -> Vec<Vec<T>> {
