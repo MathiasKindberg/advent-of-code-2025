@@ -76,11 +76,6 @@ fn parse(input: &[String]) -> Input {
         .map(|row| {
             row.chars()
                 .map(|char| char.to_digit(10).unwrap().try_into().unwrap())
-                // .enumerate()
-                // .map(|(idx, char)| Battery {
-                //     joltage: char.to_digit(10).unwrap().try_into().unwrap(),
-                //     idx,
-                // })
                 .collect()
         })
         .collect()
