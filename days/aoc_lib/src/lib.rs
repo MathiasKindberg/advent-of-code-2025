@@ -44,6 +44,14 @@ where
 {
     let size = matrix.len();
 
+    for row in matrix.iter() {
+        assert_eq!(
+            size,
+            row.len(),
+            "Matrix dimensions must be equal for a rotation"
+        );
+    }
+
     for x in 0..(size / 2) {
         for y in x..size - x - 1 {
             let temp = matrix[x][y];
@@ -60,6 +68,14 @@ where
     T: Copy,
 {
     let size = matrix.len();
+
+    for row in matrix.iter() {
+        assert_eq!(
+            size,
+            row.len(),
+            "Matrix dimensions must be equal for a rotation"
+        );
+    }
 
     // Traverse each cycle
     for i in 0..(size / 2) {
