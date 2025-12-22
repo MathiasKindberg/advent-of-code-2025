@@ -1,11 +1,4 @@
 type Input = Vec<Vec<u64>>;
-// type Input = Vec<Vec<Battery>>;
-
-#[derive(Debug, Clone)]
-struct Battery {
-    joltage: u64,
-    idx: usize,
-}
 
 fn one(input: Input) {
     let now = std::time::Instant::now();
