@@ -24,7 +24,7 @@ fn two(input: &Input) {
         // Capture turning through zero.
         if direction != 0 {
             let mod_direction = direction + (line % 100);
-            if mod_direction < 0 || mod_direction > 100 {
+            if !(0..=100).contains(&mod_direction) {
                 sum += 1;
             }
         }
@@ -43,7 +43,7 @@ fn two(input: &Input) {
         // Reset dial to within [0, 99] bound
         direction %= 100;
         if direction < 0 {
-            direction = 100 + direction
+            direction += 100
         }
     }
 

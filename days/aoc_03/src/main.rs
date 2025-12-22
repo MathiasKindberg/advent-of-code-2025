@@ -32,7 +32,7 @@ fn two(input: Input) {
 
     for row in input {
         // Now we need to find the highest 12 batteries... So we need to make the solution from part 1 more generic.
-        let mut max = vec![0_u64; NUM_BATTERIES_COMBINED];
+        let mut max = [0_u64; NUM_BATTERIES_COMBINED];
         let mut update = None;
 
         for (idx, battery) in row.iter().enumerate() {
@@ -68,7 +68,7 @@ fn parse(input: &[String]) -> Input {
         .iter()
         .map(|row| {
             row.chars()
-                .map(|char| char.to_digit(10).unwrap().try_into().unwrap())
+                .map(|char| char.to_digit(10).unwrap().into())
                 .collect()
         })
         .collect()

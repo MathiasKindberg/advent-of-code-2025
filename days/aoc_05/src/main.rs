@@ -22,24 +22,18 @@ struct Input {
 }
 
 fn get_first_open_range(ranges: &mut VecDeque<(u64, i32)>) -> Option<(u64, u64)> {
-    let Some((n_begin, (begin_id, _))) = ranges
+    let (n_begin, (begin_id, _)) = ranges
         .iter()
         .cloned()
         .enumerate()
-        .find(|(_, (_, state))| state >= &1)
-    else {
-        return None;
-    };
+        .find(|(_, (_, state))| state >= &1)?;
 
-    let Some((n_end, (end_id, _))) = ranges
+    let (n_end, (end_id, _)) = ranges
         .iter()
         .cloned()
         .skip(n_begin)
         .enumerate()
-        .find(|(_, (_, state))| state == &0)
-    else {
-        return None;
-    };
+        .find(|(_, (_, state))| state == &0)?;
 
     ranges.drain(..(n_begin + n_end));
 
@@ -141,7 +135,7 @@ fn two(input: Input) {
     println!("Two: {sum} | Elapsed: {elapsed:?}");
 }
 
-fn parse(input: &String) -> Input {
+fn parse(input: &str) -> Input {
     let (ranges, ids) = input.split_once("\n\n").unwrap();
 
     let ranges: Vec<_> = ranges

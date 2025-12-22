@@ -96,7 +96,6 @@ fn two(input: &Input) {
 fn parse(input: String) -> Input {
     input
         .split(",")
-        .into_iter()
         .map(|input| input.split_once("-").expect("Valid input"))
         .map(|(low, high)| (low.parse().unwrap(), high.parse().unwrap()))
         .collect()
