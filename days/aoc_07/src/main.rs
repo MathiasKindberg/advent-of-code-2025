@@ -59,6 +59,9 @@ fn one(input: Vec<String>) {
     println!("One: {sum} | Elapsed: {elapsed:?}");
 }
 
+// Typical graph finding problem. Recursively collect the number of outflowing valid paths
+// at each splitter. Then make it efficient by adding the numbers upward and termitnating early if
+// the path is already known.
 fn two(_input: &Input) {
     let now = std::time::Instant::now();
     let sum = 0;
@@ -66,10 +69,6 @@ fn two(_input: &Input) {
     let elapsed = now.elapsed();
     println!("Two: {sum} | Elapsed: {elapsed:?}");
 }
-
-// fn parse(input: &[String]) -> Input {
-//     input.iter().map(|row| row.to_owned()).collect()
-// }
 
 fn main() {
     use std::io::BufRead;
