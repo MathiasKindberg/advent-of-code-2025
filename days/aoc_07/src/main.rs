@@ -112,10 +112,15 @@ fn two(input: Vec<String>) {
         })
         .collect();
 
-    // This is correct but since we're double checking so many paths it takes "forever" to run.
-    let mut to_visit = vec![(0_u64, source)];
-    while let Some((beam_row, beam_col)) = to_visit.pop() {
+    // This is wrong. we need to keep track of how many ends each branch has.
+    let mut queue = vec![(0, source)];
+    // let visited = std::collections::HashMap::new();
+    let mut visited = std::collections::HashSet::new();
+    // DFS due to pop from back. Who cares.
+    while let Some((beam_row, beam_col)) = queue.pop() {
         let beam_row = beam_row + 1;
+        // We know that all nodes lead to the end. There are no dead-ends. If we've
+        // already visited this nnode we can add one.
         if beam_row == total_rows {
             sum += 1;
             continue;
@@ -123,11 +128,24 @@ fn two(input: Vec<String>) {
 
         if splitters.contains(&(beam_row, beam_col)) {
             // Split!
-            to_visit.push((beam_row, beam_col - 1));
-            to_visit.push((beam_row, beam_col + 1))
+            if visited.insert((beam_row, beam_col - 1)) {
+                queue.push((beam_row, beam_col - 1));
+            } else {
+                sum += 1;
+            }
+
+            if visited.insert((beam_row, beam_col + 1)) {
+                queue.push((beam_row, beam_col + 1));
+            } else {
+                sum += 1;
+            }
         } else {
             // Go down!
-            to_visit.push((beam_row, beam_col));
+            if visited.insert((beam_row, beam_col)) {
+                queue.push((beam_row, beam_col));
+            } else {
+                sum += 1;
+            }
         }
     }
 
