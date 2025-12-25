@@ -1,5 +1,3 @@
-use core::num;
-
 #[derive(Debug, Clone, Copy)]
 enum Op {
     Num(i64),
@@ -67,35 +65,45 @@ fn parse_one(input: &[String]) -> InputOne {
         .collect()
 }
 
-type InputTwo = Vec<Vec<String>>;
-
+// Nasty but works. With this method I align each number with the operand. Leaidng to really
+// nasty substring parsing and cloning of data.
+//
+// A much smarter method would be to pop off numbers by the end of the input and then whenver encountering
+// an operand do the summing.
 fn two(input: Vec<String>) {
     let now = std::time::Instant::now();
-    let input = parse_two(input);
-    for row in &input {
-        println!("{row:?}")
-    }
-    let input = aoc_lib::transpose2(input);
-    println!("{input:?}");
+    let mut input = parse_two(input);
 
-    // let sum: i64 = input
-    //     .into_iter()
-    //     .map(|mut ops| {
-    //         // Rotate CCW makes last element = operand
-    //         match ops.pop().unwrap() {
-    //             Op::Addition => ops.iter().map(|op| op.num_or_panic()).sum::<i64>(),
-    //             Op::Multiplication => ops.iter().map(|op| op.num_or_panic()).product::<i64>(),
-    //             op => panic!("Last element '{op}' is not operand"),
-    //         }
-    //     })
-    //     .sum();
+    let mut sum = 0;
+    for (op, row) in input.iter_mut() {
+        let mut numbers = Vec::new();
+        while let Some(num) = row
+            .iter_mut()
+            .map(|elem| elem.pop())
+            .collect::<Option<String>>()
+        {
+            if let Ok(number) = num.trim().parse::<u64>() {
+                numbers.push(number)
+            }
+        }
+        sum += match op {
+            Op::Addition => numbers.into_iter().sum::<u64>(),
+            Op::Multiplication => numbers.into_iter().product::<u64>(),
+            Op::Num(_) => unreachable!(),
+        };
+    }
 
     let elapsed = now.elapsed();
-    // println!("Two: {sum} | Elapsed: {elapsed:?}");
+    println!("Two: {sum} | Elapsed: {elapsed:?}");
 }
 
-// Nasty but works.
-fn parse_two(mut input: Vec<String>) -> InputTwo {
+// Nasty but works. Iterate over windows and align it using the operands while
+// using the next number to know how long they are, and then include "#" as just
+// junk data to signify the last window with the length to know how long the last
+// chunk of data is.
+//
+// Yes. Awful.
+fn parse_two(mut input: Vec<String>) -> Vec<(Op, Vec<String>)> {
     let operands = input.pop().unwrap();
     let mut number_starts: Vec<_> = operands
         .char_indices()
@@ -114,26 +122,61 @@ fn parse_two(mut input: Vec<String>) -> InputTwo {
         let size = next.0 - num.0;
         for row in input.iter_mut() {
             let rest_of_string = row.split_off(size);
-
             col.push(row.clone());
             *row = rest_of_string
         }
-        nums.push((num.1, col));
+
+        nums.push((
+            match num.1 {
+                '*' => Op::Multiplication,
+                '+' => Op::Addition,
+                _ => unreachable!(),
+            },
+            col,
+        ));
     }
 
-    // Remove trailing whitespace on all rows but last.
-    let num_rows = nums.len();
-    for (_, row) in nums[..num_rows - 1].iter_mut() {
-        for num in row {
-            num.pop().unwrap();
+    nums
+}
+
+fn two_clean(mut input: Vec<String>) {
+    let now = std::time::Instant::now();
+
+    let mut sum: u64 = 0;
+    let mut buffer: Vec<u64> = Vec::with_capacity(5);
+
+    while let Some(column) = input
+        .iter_mut()
+        .map(|row| row.pop())
+        .collect::<Option<Vec<_>>>()
+    {
+        // Grab last row for operand
+        let operand = &column.last().unwrap();
+
+        // Grab the rest as the nuber
+        let num = &column[0..column.len() - 1];
+
+        // To make this more efficient we could build the number ourself directly
+        // from the char parts and its location instead of collecting a string.
+        // But this is much cleaner code.
+        if let Ok(num) = num.iter().collect::<String>().trim().parse::<u64>() {
+            buffer.push(num);
+        }
+        match operand {
+            '+' => {
+                sum += buffer.iter().sum::<u64>();
+                buffer.clear();
+            }
+            '*' => {
+                sum += buffer.iter().product::<u64>();
+                buffer.clear();
+            }
+            ' ' => (),
+            op => unreachable!("unknown operand {op}"),
         }
     }
-
-    for row in nums {
-        println!("{row:?}");
-    }
-
-    todo!()
+    let elapsed = now.elapsed();
+    println!("Two: {sum} | Elapsed: {elapsed:?}");
 }
 
 fn main() {
@@ -143,5 +186,6 @@ fn main() {
     let input: Vec<String> = stdin.lock().lines().map_while(Result::ok).collect();
 
     one(input.clone());
-    two(input);
+    two(input.clone());
+    two_clean(input);
 }
