@@ -22,6 +22,7 @@ fn one(input: Vec<String>) {
 
     let mut input: Vec<_> = input
         .into_iter()
+        .filter(|row| !row.chars().into_iter().all(|char: char| char == '.'))
         .skip(1)
         .filter_map(|row| {
             let row = row
@@ -34,9 +35,9 @@ fn one(input: Vec<String>) {
             if row.is_empty() { None } else { Some(row) }
         })
         .collect();
+
     // We want to iterate top down
     input.reverse();
-
     while let Some(row) = input.pop() {
         for splitter in row {
             if beam_cols.contains(&splitter) {
@@ -61,96 +62,45 @@ fn one(input: Vec<String>) {
     println!("One: {sum} | Elapsed: {elapsed:?}");
 }
 
-// fn recurse(
-//     mut beam_cols: Vec<(u64, u64)>, // Should maybe just be (u64 u64?)
-//     splitters: std::collections::HashSet<(u64, u64)>,
-// ) -> u64 {
-//     for (beam_row, beam_col) in beam_cols {
-//         // Take a step down, if splitter then SPLIT IT!
-//         if splitters.contains(&(beam_row + 1, beam_col)) {
-//             println!("SPLIT!");
-//         }
-//     }
-//     0
-// }
-
-// Typical graph traversal problem. Recursively collect the number of outflowing valid paths
-// at each splitter. Then make it efficient by adding the numbers upward and termitnating early if
-// the path is already known.
+// Just count the
 fn two(input: Vec<String>) {
     let now = std::time::Instant::now();
-    let mut sum = 0;
 
-    let source = u64::try_from(
-        input[0]
-            .char_indices()
-            .find(|(_, elem)| elem == &'S')
-            .unwrap()
-            .0,
-    )
-    .unwrap();
+    let source = input[0].find('S').unwrap();
+    let mut timelines = vec![1_u64; input[0].len()];
 
-    let total_rows = input.len().try_into().unwrap();
-
-    let splitters: std::collections::HashSet<(u64, u64)> = input
+    let mut splitters: Vec<_> = input
         .into_iter()
-        // Remove all rows with only dots.
-        .filter(|row| !row.chars().into_iter().all(|char| char == '.'))
-        .enumerate()
+        .filter(|row| !row.chars().into_iter().all(|char: char| char == '.'))
         .skip(1)
-        // Create a flat hashset of all splitters.
-        .flat_map(|(row_idx, row)| {
-            row.char_indices()
+        .filter_map(|row| {
+            let col_idxs = row
+                .char_indices()
                 .filter_map(|(col_idx, elem)| match elem {
-                    '^' => Some((
-                        u64::try_from(row_idx).unwrap(),
-                        u64::try_from(col_idx).unwrap(),
-                    )),
+                    '^' => Some(col_idx),
                     _ => None,
                 })
-                .collect::<Vec<_>>()
+                .collect::<Vec<_>>();
+            if col_idxs.is_empty() {
+                None
+            } else {
+                Some(col_idxs)
+            }
         })
         .collect();
 
-    // This is wrong. we need to keep track of how many ends each branch has.
-    let mut queue = vec![(0, source)];
-    // let visited = std::collections::HashMap::new();
-    let mut visited = std::collections::HashSet::new();
-    // DFS due to pop from back. Who cares.
-    while let Some((beam_row, beam_col)) = queue.pop() {
-        let beam_row = beam_row + 1;
-        // We know that all nodes lead to the end. There are no dead-ends. If we've
-        // already visited this nnode we can add one.
-        if beam_row == total_rows {
-            sum += 1;
-            continue;
-        }
-
-        if splitters.contains(&(beam_row, beam_col)) {
-            // Split!
-            if visited.insert((beam_row, beam_col - 1)) {
-                queue.push((beam_row, beam_col - 1));
-            } else {
-                sum += 1;
-            }
-
-            if visited.insert((beam_row, beam_col + 1)) {
-                queue.push((beam_row, beam_col + 1));
-            } else {
-                sum += 1;
-            }
-        } else {
-            // Go down!
-            if visited.insert((beam_row, beam_col)) {
-                queue.push((beam_row, beam_col));
-            } else {
-                sum += 1;
-            }
+    // Go from bottom up. Everytime we encountner a splitter keep adding the timelienes.
+    splitters.reverse();
+    for line in splitters {
+        for splitter in line {
+            timelines[splitter] = timelines[splitter - 1] + timelines[splitter + 1];
         }
     }
 
+    let sum = timelines[source];
+
     let elapsed = now.elapsed();
-    println!("Two: {sum} | Elapsed: {elapsed:?}");
+    println!("Two new: {sum} | Elapsed: {elapsed:?}");
 }
 
 fn main() {
@@ -159,5 +109,5 @@ fn main() {
     let stdin = std::io::stdin();
     let input: Vec<String> = stdin.lock().lines().map_while(Result::ok).collect();
     one(input.clone());
-    two(input);
+    two(input.clone());
 }
