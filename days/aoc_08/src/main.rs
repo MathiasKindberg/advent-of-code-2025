@@ -1,5 +1,3 @@
-use itertools::Itertools;
-
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 struct Point {
     x: i64,
@@ -39,7 +37,6 @@ fn one(input: Vec<String>) {
     }
     distance_list.sort_unstable_by(|a, b| a.2.partial_cmp(&b.2).unwrap());
 
-    // I suppose this could be done with an adjacency list instead and then just step through it. But this is more fun.
     let mut circuits = std::collections::HashMap::new();
     let mut curr_circuit_id = 0;
     for (point_1, point_2, _) in &distance_list[0..connections] {
@@ -78,6 +75,7 @@ fn one(input: Vec<String>) {
     println!("One: {sum} | Elapsed: {elapsed:?}");
 }
 
+// The sorting and distance getting takes ~~28 ms and the final circuit joining 1-2 ms.
 fn two(input: Vec<String>) {
     let now = std::time::Instant::now();
 
@@ -93,8 +91,6 @@ fn two(input: Vec<String>) {
         })
         .collect();
 
-    let parsing_elapsed = now.elapsed();
-
     let n = points.len();
     let mut distance_list = Vec::with_capacity(n * (n - 1) / 2);
     for (i, point_1) in points.iter().enumerate() {
@@ -102,37 +98,50 @@ fn two(input: Vec<String>) {
             distance_list.push((point_1, point_2, point_2.distance_to(point_1)));
         }
     }
-    let distances_elapsed = now.elapsed();
-
     distance_list.sort_unstable_by(|a, b| a.2.partial_cmp(&b.2).unwrap());
 
-    println!("last: {:?}", distance_list.last().unwrap());
+    let parsing_sorting_elapsed = now.elapsed();
 
-    let sorting_elapsed = now.elapsed();
-
-    // Now we need to keep track of the number of independent networks, when we are back to zero we are done.
-    // let mut circuits = std::collections::HashMap::new();
-    // let mut circuits: std::collections::HashMap<_, _> = points
-    //     .iter()
-    //     .enumerate()
-    //     .map(|(circuit, point)| (point, circuit))
-    //     .collect();
-
-    let mut circuits: Vec<std::collections::HashSet<_>> = points
-        .iter()
-        .map(|point| vec![point].into_iter().collect())
-        .collect();
-
-    // A location cache to know which circuit to use.
-    let circuit_loc_cache: std::collections::HashMap<_, _> = circuits
+    // start with a set of disjoint circuits.
+    let mut circuits: std::collections::HashMap<_, _> = points
         .iter()
         .enumerate()
-        .map(|(idx, circuit)| (circuit.iter().next().unwrap(), idx))
+        .map(|(i, point)| (point, i))
         .collect();
 
+    let mut circuit_id_cache: std::collections::HashMap<_, _> =
+        circuits.iter().map(|(k, v)| (*v, vec![*k])).collect();
+
     for (point_1, point_2, _) in &distance_list {
-        let point_1_circuit_id = circuit_loc_cache.get(point_1).unwrap();
-        let point_2_circuit_id = circuit_loc_cache.get(point_2).unwrap();
+        let point_1_circuit_id = circuits.get(point_1).copied().unwrap();
+        let point_2_circuit_id = circuits.get(point_2).copied().unwrap();
+
+        // If disjoint, then join them.
+        if point_1_circuit_id != point_2_circuit_id {
+            // Perform joining by using the cache and then setting the value.
+
+            // Grab the vector and remove it from the cache.
+            let to_copy_in = circuit_id_cache.remove(&point_2_circuit_id).unwrap();
+
+            for point in to_copy_in {
+                // Assign network id
+                circuits.insert(point, point_1_circuit_id);
+
+                // Extend cache
+                let items = circuit_id_cache.get_mut(&point_1_circuit_id).unwrap();
+                items.push(point);
+            }
+
+            // If we are down to 1 item in the cache then all ciruits are connected.
+            if circuit_id_cache.len() == 1 {
+                let sum = point_1.x * point_2.x;
+                let elapsed = now.elapsed();
+                println!(
+                    "One: {sum} | Elapsed: {elapsed:?} Sorting and parsing: {parsing_sorting_elapsed:?}"
+                );
+                break;
+            }
+        }
     }
 }
 
