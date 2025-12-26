@@ -10,6 +10,10 @@ impl Point {
         (((dst.x - self.x).pow(2) + (dst.y - self.y).pow(2) + (dst.z - self.z).pow(2)) as f64)
             .sqrt()
     }
+
+    fn distance_squared(&self, dst: &Point) -> i64 {
+        (dst.x - self.x).pow(2) + (dst.y - self.y).pow(2) + (dst.z - self.z).pow(2)
+    }
 }
 
 fn one(input: Vec<String>) {
@@ -75,7 +79,6 @@ fn one(input: Vec<String>) {
     println!("One: {sum} | Elapsed: {elapsed:?}");
 }
 
-// The sorting and distance getting takes ~~28 ms and the final circuit joining 1-2 ms.
 fn two(input: Vec<String>) {
     let now = std::time::Instant::now();
 
@@ -92,29 +95,29 @@ fn two(input: Vec<String>) {
         .collect();
 
     let n = points.len();
-    let mut distance_list = Vec::with_capacity(n * (n - 1) / 2);
+    let mut heap = std::collections::BinaryHeap::with_capacity(n * (n - 1) / 2);
     for (i, point_1) in points.iter().enumerate() {
-        for point_2 in &points[i + 1..] {
-            distance_list.push((point_1, point_2, point_2.distance_to(point_1)));
+        for (j, point_2) in points[i + 1..].iter().enumerate() {
+            // BinaryHeap is max-heap, so use Reverse to get min-heap behavior
+            heap.push((
+                std::cmp::Reverse(point_2.distance_squared(point_1)),
+                i,
+                i + 1 + j,
+            ));
         }
     }
-    distance_list.sort_unstable_by(|a, b| a.2.partial_cmp(&b.2).unwrap());
 
     let parsing_sorting_elapsed = now.elapsed();
 
     // start with a set of disjoint circuits.
-    let mut circuits: std::collections::HashMap<_, _> = points
-        .iter()
-        .enumerate()
-        .map(|(i, point)| (point, i))
-        .collect();
+    let mut circuits: Vec<usize> = (0..n).collect();
 
     let mut circuit_id_cache: std::collections::HashMap<_, _> =
-        circuits.iter().map(|(k, v)| (*v, vec![*k])).collect();
+        (0..n).map(|i| (i, vec![i])).collect();
 
-    for (point_1, point_2, _) in &distance_list {
-        let point_1_circuit_id = circuits.get(point_1).copied().unwrap();
-        let point_2_circuit_id = circuits.get(point_2).copied().unwrap();
+    while let Some((_, idx1, idx2)) = heap.pop() {
+        let point_1_circuit_id = circuits[idx1];
+        let point_2_circuit_id = circuits[idx2];
 
         // If disjoint, then join them.
         if point_1_circuit_id != point_2_circuit_id {
@@ -123,21 +126,21 @@ fn two(input: Vec<String>) {
             // Grab the vector and remove it from the cache.
             let to_copy_in = circuit_id_cache.remove(&point_2_circuit_id).unwrap();
 
-            for point in to_copy_in {
+            for point_idx in to_copy_in {
                 // Assign network id
-                circuits.insert(point, point_1_circuit_id);
+                circuits[point_idx] = point_1_circuit_id;
 
                 // Extend cache
                 let items = circuit_id_cache.get_mut(&point_1_circuit_id).unwrap();
-                items.push(point);
+                items.push(point_idx);
             }
 
             // If we are down to 1 item in the cache then all ciruits are connected.
             if circuit_id_cache.len() == 1 {
-                let sum = point_1.x * point_2.x;
+                let sum = points[idx1].x * points[idx2].x;
                 let elapsed = now.elapsed();
                 println!(
-                    "One: {sum} | Elapsed: {elapsed:?} Sorting and parsing: {parsing_sorting_elapsed:?}"
+                    "Two: {sum} | Elapsed: {elapsed:?} Sorting and parsing: {parsing_sorting_elapsed:?}"
                 );
                 break;
             }
