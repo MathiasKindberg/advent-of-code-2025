@@ -1,4 +1,5 @@
-// Inefficient BFS, takes 21 second to run maxing out at ~17 GB memory while a DFS gets memory killed due to the exploding search space.
+// BFS. Can't be a DFS since then we can take too many bad steps and stumble upon a state we could
+// reach easier starting from a different button.
 fn one(input: Vec<String>) {
     let now = std::time::Instant::now();
     let mut sum = 0;
