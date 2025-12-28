@@ -52,7 +52,7 @@ fn one(input: Vec<String>) {
     println!("One: {sum} | Elapsed: {elapsed:?}");
 }
 
-// Now the search space is even larger.... Now we need to be smart.
+// Now the search space is even larger.... Now we need to be smart. A regular BFS doesn't even terminate for the first problem.
 fn two(input: Vec<String>) {
     let now = std::time::Instant::now();
     let mut sum = 0;
@@ -60,7 +60,7 @@ fn two(input: Vec<String>) {
 
     let mut queue = std::collections::VecDeque::new();
     let mut visited = std::collections::HashSet::new();
-    for (_, buttons, target_joltage) in &input {
+    for (idx, (_, buttons, target_joltage)) in input.iter().enumerate() {
         let state = vec![0_usize; target_joltage.len()];
         let mut fewest_steps = usize::MAX;
 
@@ -72,6 +72,11 @@ fn two(input: Vec<String>) {
         // BFS = Pop_front
         while let Some((button, mut state, mut steps)) = queue.pop_front() {
             if steps >= fewest_steps {
+                continue;
+            }
+
+            // If any button value is above the target then kill the branch.
+            if state.iter().zip(target_joltage.iter()).any(|(a, b)| a > b) {
                 continue;
             }
 
@@ -98,6 +103,7 @@ fn two(input: Vec<String>) {
 
         queue.clear();
         visited.clear();
+        println!("Solved: {} of {}", idx, input.len());
     }
 
     let elapsed = now.elapsed();
@@ -110,11 +116,11 @@ fn parse(input: &[String]) -> Vec<(Vec<bool>, Vec<Vec<usize>>, Vec<usize>)> {
         .iter()
         .map(|row| {
             let mut iter = row.split_ascii_whitespace();
-            let lights = iter.next().unwrap();
-            let (_, lights) = lights.split_once('[').unwrap();
-            let (lights, _) = lights.split_once(']').unwrap();
 
-            let lights = lights
+            let lights = iter
+                .next()
+                .unwrap()
+                .trim_matches(['[', ']'])
                 .chars()
                 .map(|light| match light {
                     '#' => true,
@@ -123,21 +129,19 @@ fn parse(input: &[String]) -> Vec<(Vec<bool>, Vec<Vec<usize>>, Vec<usize>)> {
                 })
                 .collect::<Vec<_>>();
 
-            let joltage = iter.next_back().unwrap();
-            let (_, joltage) = joltage.split_once('{').unwrap();
-            let (joltage, _) = joltage.split_once('}').unwrap();
-
             // Skip first and last.
-            let joltage: Vec<usize> = joltage
+            let joltage: Vec<usize> = iter
+                .next_back()
+                .unwrap()
+                .trim_matches(['{', '}'])
                 .split(',')
                 .map(|joltage| joltage.parse().unwrap())
                 .collect();
+
             let buttons: Vec<Vec<usize>> = iter
                 .map(|button| {
-                    let (_, button) = button.split_once('(').unwrap();
-                    let (button, _) = button.split_once(')').unwrap();
-
                     button
+                        .trim_matches(['(', ')'])
                         .split(",")
                         .map(|light| light.parse().unwrap())
                         .collect()
