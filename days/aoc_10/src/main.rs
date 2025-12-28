@@ -60,8 +60,8 @@ fn two(input: Vec<String>) {
 
     let mut queue = std::collections::VecDeque::new();
     let mut visited = std::collections::HashSet::new();
-    for (target_lights, buttons, _) in &input {
-        let state = vec![false; target_lights.len()];
+    for (_, buttons, target_joltage) in &input {
+        let state = vec![0_usize; target_joltage.len()];
         let mut fewest_steps = usize::MAX;
 
         // BFS where we terminate early if we've found a quicker path.
@@ -77,12 +77,12 @@ fn two(input: Vec<String>) {
 
             // Apply change by switching buttons.
             for change in button {
-                state[*change] = !state[*change]
+                state[*change] += 1
             }
 
             steps += 1;
             // If we've reached the target, stop searching.
-            if state == *target_lights {
+            if state == *target_joltage {
                 fewest_steps = steps;
                 continue;
             }
