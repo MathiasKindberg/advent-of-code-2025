@@ -5,6 +5,8 @@ fn one(input: Vec<String>) {
     let input = parse(&input);
 
     let mut queue = std::collections::VecDeque::new();
+    let mut visited = std::collections::HashSet::new();
+
     for (target_lights, buttons, _) in &input {
         let state = vec![false; target_lights.len()];
         let mut fewest_steps = usize::MAX;
@@ -33,24 +35,30 @@ fn one(input: Vec<String>) {
             }
 
             // Add all buttons again
-            for button in buttons {
-                queue.push_back((button, state.clone(), steps));
+            if visited.insert(state.clone()) {
+                for button in buttons {
+                    queue.push_back((button, state.clone(), steps));
+                }
             }
         }
         sum += fewest_steps;
+
         queue.clear();
+        visited.clear();
     }
 
     let elapsed = now.elapsed();
     println!("One: {sum} | Elapsed: {elapsed:?}");
 }
 
+// Now the search space is even larger.... Now we need to be smart.
 fn two(input: Vec<String>) {
     let now = std::time::Instant::now();
     let mut sum = 0;
     let input = parse(&input);
 
     let mut queue = std::collections::VecDeque::new();
+    let mut visited = std::collections::HashSet::new();
     for (target_lights, buttons, _) in &input {
         let state = vec![false; target_lights.len()];
         let mut fewest_steps = usize::MAX;
@@ -79,12 +87,16 @@ fn two(input: Vec<String>) {
             }
 
             // Add all buttons again
-            for button in buttons {
-                queue.push_back((button, state.clone(), steps));
+            if visited.insert(state.clone()) {
+                for button in buttons {
+                    queue.push_back((button, state.clone(), steps));
+                }
             }
         }
         sum += fewest_steps;
+
         queue.clear();
+        visited.clear();
     }
 
     let elapsed = now.elapsed();
@@ -141,6 +153,6 @@ fn main() {
     let stdin = std::io::stdin();
     let input: Vec<String> = stdin.lock().lines().map_while(Result::ok).collect();
 
-    // one(input.clone());
+    one(input.clone());
     two(input);
 }
