@@ -1,7 +1,5 @@
 use std::vec;
 
-type Input = Vec<String>;
-
 // Count number of splits if it has a splitter
 // above it and -1 or +1 in columns.
 fn one(input: Vec<String>) {
