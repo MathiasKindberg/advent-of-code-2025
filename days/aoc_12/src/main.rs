@@ -57,7 +57,7 @@ impl Shape {
 
     /// Attempts to place the shape in the grid as per its current layout.
     /// If it is possible mutates the grid
-    pub fn remove_from_grid(&self, mid_x: usize, mid_y: usize, grid: &mut Vec<Vec<Point>>) -> bool {
+    pub fn remove_from_grid(&self, mid_x: usize, mid_y: usize, grid: &mut [Vec<Point>]) -> bool {
         // Second pass: place the shape
         for sy in 0..3 {
             for sx in 0..3 {
@@ -74,12 +74,7 @@ impl Shape {
 
     /// Attempts to place the shape in the grid as per its current layout.
     /// If it is possible mutates the grid
-    pub fn try_place_in_grid(
-        &self,
-        mid_x: usize,
-        mid_y: usize,
-        grid: &mut Vec<Vec<Point>>,
-    ) -> bool {
+    pub fn try_place_in_grid(&self, mid_x: usize, mid_y: usize, grid: &mut [Vec<Point>]) -> bool {
         // First pass: check if placement is possible
         for sy in 0..3 {
             for sx in 0..3 {
@@ -130,7 +125,9 @@ impl std::fmt::Display for Point {
     }
 }
 
-fn parse_one(input: String) -> (Vec<Shape>, Vec<((usize, usize), Vec<usize>)>) {
+type InputOne = (Vec<Shape>, Vec<((usize, usize), Vec<usize>)>);
+
+fn parse_one(input: String) -> InputOne {
     let mut input: Vec<_> = input.split("\n\n").collect();
     let regions = input.pop().unwrap();
 
@@ -231,12 +228,7 @@ fn one(input: String) {
         let shapes_to_place: Vec<_> = shapes_to_place
             .iter()
             .enumerate()
-            .flat_map(|(idx, num)| {
-                (0..*num)
-                    .into_iter()
-                    .map(|_| shapes[idx].clone())
-                    .collect::<Vec<_>>()
-            })
+            .flat_map(|(idx, num)| (0..*num).map(|_| shapes[idx].clone()).collect::<Vec<_>>())
             .collect();
 
         // Pad input so we don't have to care about indexing out of bounds.
