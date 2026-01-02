@@ -190,12 +190,12 @@ pub fn search(
         return result;
     }
 
-    // Check if we can even place all shapes. -2 since we have paddign aroudn.
+    // Check if we can even place all shapes. -2 since we have padding around.
     let grid_area = (grid.len() - 2) * (grid[0].len() - 2);
     let shape_area: usize = shapes_to_place.iter().map(|shape| shape.area()).sum();
 
-    // We could just return true if the area is smaller. But since actually placing the shapes
-    // takes 1.3 seconds lets just do it.
+    // We could just return true if the area is smaller, that also produces teh correct result. But
+    // since placing the shapes takes 1.3 seconds lets just do it.
     if shape_area > grid_area {
         memoization.insert(key, false);
         return false;
