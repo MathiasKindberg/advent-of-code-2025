@@ -91,6 +91,21 @@ where
     }
 }
 
+pub fn rotate_90_cw_2d_array_new<T, const N: usize>(matrix: &mut [[T; N]; N])
+where
+    T: Copy,
+{
+    for i in 0..(N / 2) {
+        for j in i..(N - i - 1) {
+            let temp = matrix[i][j];
+            matrix[i][j] = matrix[N - 1 - j][i];
+            matrix[N - 1 - j][i] = matrix[N - 1 - i][N - 1 - j];
+            matrix[N - 1 - i][N - 1 - j] = matrix[j][N - 1 - i];
+            matrix[j][N - 1 - i] = temp;
+        }
+    }
+}
+
 pub fn rotate_90_cw_2d<T>(matrix: &mut [Vec<T>])
 where
     T: Copy,
@@ -111,24 +126,13 @@ where
     }
 }
 
-pub fn print_2d<T>(v: &[Vec<T>])
+pub fn print_2d<T, Row>(v: &[Row])
 where
     T: std::fmt::Display,
+    Row: AsRef<[T]>,
 {
     for row in v {
-        for c in row {
-            print!("{c}");
-        }
-        println!()
-    }
-}
-
-pub fn print_2d_array_mut<T>(v: &[&mut [T]])
-where
-    T: std::fmt::Display,
-{
-    for row in v {
-        for c in row.iter() {
+        for c in row.as_ref() {
             print!("{c}");
         }
         println!()

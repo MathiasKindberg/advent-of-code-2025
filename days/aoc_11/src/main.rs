@@ -115,6 +115,6 @@ fn main() {
     let stdin = std::io::stdin();
     let input: Vec<String> = stdin.lock().lines().map_while(Result::ok).collect();
 
-    // one(input.clone());
+    one(input.clone());
     two(input);
 }
