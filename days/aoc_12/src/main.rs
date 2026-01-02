@@ -177,7 +177,7 @@ fn parse_one(input: String) -> InputOne {
     )
 }
 
-// Return true if all shapes are placed. Enormous search space so does not complete for test input.
+// Return true if all shapes are placed. Enormous search space so does not complete for test input. Runs in
 pub fn search(
     mut shapes_to_place: Vec<Shape>,
     grid: &mut Vec<Vec<Point>>,
@@ -188,6 +188,17 @@ pub fn search(
     // Check if we've already determined this state is unsolvable
     if let Some(&result) = memoization.get(&key) {
         return result;
+    }
+
+    // Check if we can even place all shapes. -2 since we have paddign aroudn.
+    let grid_area = (grid.len() - 2) * (grid[0].len() - 2);
+    let shape_area: usize = shapes_to_place.iter().map(|shape| shape.area()).sum();
+
+    // We could just return true if the area is smaller. But since actually placing the shapes
+    // takes 1.3 seconds lets just do it.
+    if shape_area > grid_area {
+        memoization.insert(key, false);
+        return false;
     }
 
     if let Some(mut shape) = shapes_to_place.pop() {
@@ -232,36 +243,20 @@ fn one(input: String) {
             .collect();
 
         // Pad input so we don't have to care about indexing out of bounds.
-        let mut _grid = aoc_lib::pad_input(vec![vec![Point::Empty; x]; y], Point::OutOfBounds);
+        let mut grid = aoc_lib::pad_input(vec![vec![Point::Empty; x]; y], Point::OutOfBounds);
 
-        // Check if we can even place all shapes.
-        let grid_area = x * y;
-        let shape_area: usize = shapes_to_place.iter().map(|shape| shape.area()).sum();
-
-        if shape_area < grid_area {
+        // DFS searching all possibilites.
+        if search(
+            shapes_to_place,
+            &mut grid,
+            &mut std::collections::HashMap::new(),
+        ) {
             sum += 1;
         }
-
-        // DFS searching all possibilites. Too slow to complete.
-        // if search(
-        //     shapes_to_place,
-        //     &mut grid,
-        //     &mut std::collections::HashMap::new(),
-        // ) {
-        //     sum += 1;
-        // }
     }
 
     let elapsed = now.elapsed();
     println!("One: {sum} | Elapsed: {elapsed:?}");
-}
-
-fn two(_input: String) {
-    let now = std::time::Instant::now();
-    let sum = 0;
-
-    let elapsed = now.elapsed();
-    println!("Two: {sum} | Elapsed: {elapsed:?}");
 }
 
 fn main() {
@@ -269,6 +264,5 @@ fn main() {
     let mut input = String::new();
     stdin.lock().read_to_string(&mut input).unwrap();
 
-    one(input.clone());
-    two(input);
+    one(input);
 }
